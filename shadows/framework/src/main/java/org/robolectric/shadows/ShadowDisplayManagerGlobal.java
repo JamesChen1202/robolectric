@@ -1,8 +1,10 @@
 package org.robolectric.shadows;
 
 import static android.os.Build.VERSION_CODES.JELLY_BEAN_MR1;
+import static android.os.Build.VERSION_CODES.O_MR1;
 import static android.os.Build.VERSION_CODES.P;
 
+import android.graphics.Point;
 import android.hardware.display.DisplayManagerGlobal;
 import android.hardware.display.IDisplayManager;
 import android.hardware.display.IDisplayManagerCallback;
@@ -48,6 +50,11 @@ public class ShadowDisplayManagerGlobal {
   @Implementation
   protected WifiDisplayStatus getWifiDisplayStatus() {
     return new WifiDisplayStatus();
+  }
+
+  @Implementation(minSdk = O_MR1)
+  public Point getStableDisplaySize() {
+    return new Point();
   }
 
   int addDisplay(DisplayInfo displayInfo) {
