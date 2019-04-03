@@ -112,7 +112,7 @@ public class ShadowSensorManager {
 
   /** Propagates the {@code event} to all registered listeners. */
   public void sendSensorEventToListeners(SensorEvent event) {
-    for (SensorEventListener listener : listeners) {
+    for (SensorEventListener listener : new ArrayList<SensorEventListener>(listeners)) {
       listener.onSensorChanged(event);
     }
   }
