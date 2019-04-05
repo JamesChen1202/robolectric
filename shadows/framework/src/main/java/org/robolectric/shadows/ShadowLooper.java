@@ -27,7 +27,7 @@ import org.robolectric.util.Scheduler;
  * Robolectric enqueues posted {@link Runnable}s to be run (on this thread) later. {@code Runnable}s
  * that are scheduled to run immediately can be triggered by calling {@link #idle()}.
  *
- * @see ShadowMessageQueue
+ * @see ShadowLegacyMessageQueue
  */
 @Implements(value = Looper.class /*, shadowPicker = ShadowBaseLooper.Picker.class */)
 @SuppressWarnings("SynchronizeOnNonFinalField")
@@ -120,7 +120,10 @@ public class ShadowLooper extends ShadowBaseLooper {
 
   @Implementation
   protected void quit() {
-    if (realObject == Looper.getMainLooper()) throw new RuntimeException("Main thread not allowed to quit");
+    if (realObject == Looper.getMainLooper()) {
+      throw new RuntimeException("Main thread not allowed"
+          + " to quit");
+    }
     quitUnchecked();
   }
 
@@ -393,7 +396,7 @@ public class ShadowLooper extends ShadowBaseLooper {
   }
 
   public void resetScheduler() {
-    ShadowMessageQueue shadowMessageQueue = shadowOf(realObject.getQueue());
+    ShadowLegacyMessageQueue shadowMessageQueue = shadowOf(realObject.getQueue());
     if (realObject == Looper.getMainLooper() || RoboSettings.isUseGlobalScheduler()) {
       shadowMessageQueue.setScheduler(RuntimeEnvironment.getMasterScheduler());
     } else {
@@ -434,7 +437,7 @@ public class ShadowLooper extends ShadowBaseLooper {
     return Shadow.extract(looper);
   }
 
-  private static ShadowMessageQueue shadowOf(MessageQueue mq) {
+  private static ShadowLegacyMessageQueue shadowOf(MessageQueue mq) {
     return Shadow.extract(mq);
   }
 

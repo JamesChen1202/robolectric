@@ -4,7 +4,6 @@ import static android.os.Build.VERSION_CODES.M;
 import static com.google.common.truth.Truth.assertThat;
 import static com.google.common.truth.TruthJUnit.assume;
 import static org.junit.Assert.fail;
-import static org.robolectric.Shadows.shadowOf;
 import static org.robolectric.util.ReflectionHelpers.ClassParameter.from;
 import static org.robolectric.util.ReflectionHelpers.callConstructor;
 import static org.robolectric.util.ReflectionHelpers.callInstanceMethod;
@@ -25,15 +24,17 @@ import org.junit.Ignore;
 import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.robolectric.RuntimeEnvironment;
-import org.robolectric.shadows.ShadowMessage._Message_;
+import org.robolectric.shadow.api.Shadow;
+import org.robolectric.shadows.ShadowLegacyMessage._Message_;
 import org.robolectric.util.ReflectionHelpers;
 import org.robolectric.util.Scheduler;
 
+/** Unit tests for {@link ShadowLegacyMessageQueue}. */
 @RunWith(AndroidJUnit4.class)
-public class ShadowMessageQueueTest {
+public class ShadowLegacyMessageQueueTest {
   private Looper looper;
   private MessageQueue queue;
-  private ShadowMessageQueue shadowQueue;
+  private ShadowLegacyMessageQueue shadowQueue;
   private Message testMessage;
   private TestHandler handler;
   private Scheduler scheduler;
@@ -67,8 +68,8 @@ public class ShadowMessageQueueTest {
     // Queues and loopers are closely linked; can't easily test one without the other.
     looper = newLooper();
     handler = new TestHandler(looper);
-    queue = looper.getQueue(); 
-    shadowQueue = shadowOf(queue);
+    queue = looper.getQueue();
+    shadowQueue = Shadow.extract(queue);
     scheduler = shadowQueue.getScheduler();
     scheduler.pause();
     testMessage = handler.obtainMessage();

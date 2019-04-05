@@ -15,11 +15,12 @@ import org.junit.Test;
 import org.junit.runner.RunWith;
 import org.robolectric.Robolectric;
 import org.robolectric.annotation.Config;
+import org.robolectric.shadow.api.Shadow;
 import org.robolectric.util.ReflectionHelpers;
 import org.robolectric.util.Scheduler;
 
 @RunWith(AndroidJUnit4.class)
-public class ShadowMessageTest {
+public class ShadowLegacyMessageTest {
 
   @Before
   public void skipForRealisticLooper() {
@@ -180,7 +181,7 @@ public class ShadowMessageTest {
   public void testSetGetNext() {
     Message msg = Message.obtain();
     Message msg2 = Message.obtain();
-    ShadowMessage sMsg = shadowOf(msg);
+    ShadowLegacyMessage sMsg = Shadow.extract(msg);
     sMsg.setNext(msg2);
     assertThat(sMsg.getNext()).isSameAs(msg2);
   }
@@ -191,7 +192,7 @@ public class ShadowMessageTest {
     ShadowLooper.pauseMainLooper();
     Handler h = new Handler();
     Message msg = Message.obtain(h, 123);
-    ShadowMessage sMsg = shadowOf(msg);
+    ShadowLegacyMessage sMsg = Shadow.extract(msg);
     assertThat(sMsg.isInUse()).isFalse();
     msg.sendToTarget();
     assertThat(sMsg.isInUse()).isTrue();
@@ -247,7 +248,7 @@ public class ShadowMessageTest {
     assertThat(dummy2).named("before resetting").isSameAs(dummy1);
 
     shadowOf(dummy2).recycleUnchecked();
-    ShadowMessage.reset();
+    ShadowLegacyMessage.reset();
     dummy1 = Message.obtain();
     assertThat(dummy1).named("after resetting").isNotSameAs(dummy2);
   }

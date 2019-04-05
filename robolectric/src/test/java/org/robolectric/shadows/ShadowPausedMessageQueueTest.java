@@ -20,9 +20,9 @@ import org.robolectric.shadow.api.Shadow;
 import org.robolectric.util.ReflectionHelpers;
 
 @RunWith(AndroidJUnit4.class)
-public class ShadowRealisticMessageQueueTest {
+public class ShadowPausedMessageQueueTest {
   private MessageQueue queue;
-  private ShadowRealisticMessageQueue shadowQueue;
+  private ShadowPausedMessageQueue shadowQueue;
 
   @Before
   public void setUp() throws Exception {
@@ -92,19 +92,19 @@ public class ShadowRealisticMessageQueueTest {
 
   private void assertMainQueueEmptyAndAdd() {
     MessageQueue mainQueue = Looper.getMainLooper().getQueue();
-    ShadowRealisticMessageQueue shadowRealisticMessageQueue = Shadow.extract(mainQueue);
-    assertThat(shadowRealisticMessageQueue.getMessages()).isNull();
+    ShadowPausedMessageQueue shadowPausedMessageQueue = Shadow.extract(mainQueue);
+    assertThat(shadowPausedMessageQueue.getMessages()).isNull();
     Message msg = Message.obtain();
     msg.setTarget(new Handler());
-    shadowRealisticMessageQueue.doEnqueueMessage(msg, 0);
+    shadowPausedMessageQueue.doEnqueueMessage(msg, 0);
   }
 
   private static class NextThread extends Thread {
 
     private final CountDownLatch latch = new CountDownLatch(1);
-    private final ShadowRealisticMessageQueue shadowQueue;
+    private final ShadowPausedMessageQueue shadowQueue;
 
-    private NextThread(ShadowRealisticMessageQueue shadowQueue) {
+    private NextThread(ShadowPausedMessageQueue shadowQueue) {
       this.shadowQueue = shadowQueue;
     }
 
@@ -114,7 +114,7 @@ public class ShadowRealisticMessageQueueTest {
       shadowQueue.getNext();
     }
 
-    public static NextThread startSync(ShadowRealisticMessageQueue shadowQueue)
+    public static NextThread startSync(ShadowPausedMessageQueue shadowQueue)
         throws InterruptedException {
       NextThread t = new NextThread(shadowQueue);
       t.start();

@@ -63,7 +63,7 @@ public class ShadowRealisticLooper extends ShadowBaseLooper {
 
   @Override
   public void idle() {
-    ShadowRealisticMessageQueue shadowQueue = Shadow.extract(realLooper.getQueue());
+    ShadowPausedMessageQueue shadowQueue = Shadow.extract(realLooper.getQueue());
     IdlingRunnable idlingRunnable = new IdlingRunnable(shadowQueue);
     if (Thread.currentThread() == realLooper.getThread()) {
       idlingRunnable.run();
@@ -89,7 +89,7 @@ public class ShadowRealisticLooper extends ShadowBaseLooper {
 
   @Override
   public boolean isIdle() {
-    ShadowRealisticMessageQueue shadowQueue = Shadow.extract(realLooper.getQueue());
+    ShadowPausedMessageQueue shadowQueue = Shadow.extract(realLooper.getQueue());
     return shadowQueue.isIdle();
   }
 
@@ -112,22 +112,21 @@ public class ShadowRealisticLooper extends ShadowBaseLooper {
 
   @Override
   public Duration getNextScheduledTaskTime() {
-    ShadowRealisticMessageQueue shadowQueue = Shadow.extract(realLooper.getQueue());
+    ShadowPausedMessageQueue shadowQueue = Shadow.extract(realLooper.getQueue());
     return shadowQueue.getNextScheduledTaskTime();
   }
 
   @Override
   public Duration getLastScheduledTaskTime() {
-    ShadowRealisticMessageQueue shadowQueue = Shadow.extract(realLooper.getQueue());
+    ShadowPausedMessageQueue shadowQueue = Shadow.extract(realLooper.getQueue());
     return shadowQueue.getLastScheduledTaskTime();
   }
 
   public static boolean isMainLooperIdle() {
     Looper mainLooper = Looper.getMainLooper();
     if (mainLooper != null) {
-      ShadowRealisticMessageQueue shadowRealisticMessageQueue =
-          Shadow.extract(mainLooper.getQueue());
-      return shadowRealisticMessageQueue.isIdle();
+      ShadowPausedMessageQueue shadowPausedMessageQueue = Shadow.extract(mainLooper.getQueue());
+      return shadowPausedMessageQueue.isIdle();
     }
     return true;
   }
@@ -141,12 +140,12 @@ public class ShadowRealisticLooper extends ShadowBaseLooper {
 
     Collection<Looper> loopersCopy = new ArrayList(loopingLoopers);
     for (Looper looper : loopersCopy) {
-      ShadowRealisticMessageQueue shadowRealisticMessageQueue = Shadow.extract(looper.getQueue());
-      if (shadowRealisticMessageQueue.isQuitAllowed()) {
+      ShadowPausedMessageQueue shadowPausedMessageQueue = Shadow.extract(looper.getQueue());
+      if (shadowPausedMessageQueue.isQuitAllowed()) {
         looper.quit();
         loopingLoopers.remove(looper);
       } else {
-        shadowRealisticMessageQueue.reset();
+        shadowPausedMessageQueue.reset();
       }
     }
   }
@@ -154,9 +153,9 @@ public class ShadowRealisticLooper extends ShadowBaseLooper {
   private static class IdlingRunnable implements Runnable {
 
     private final CountDownLatch runLatch = new CountDownLatch(1);
-    private final ShadowRealisticMessageQueue shadowQueue;
+    private final ShadowPausedMessageQueue shadowQueue;
 
-    public IdlingRunnable(ShadowRealisticMessageQueue shadowQueue) {
+    public IdlingRunnable(ShadowPausedMessageQueue shadowQueue) {
       this.shadowQueue = shadowQueue;
     }
 
@@ -173,8 +172,8 @@ public class ShadowRealisticLooper extends ShadowBaseLooper {
       while (!shadowQueue.isIdle()) {
         Message msg = shadowQueue.getNext();
         msg.getTarget().dispatchMessage(msg);
-        ShadowRealisticMessage shadowMsg = Shadow.extract(msg);
-        shadowMsg.recycleQuietly();
+        ShadowPausedMessage shadowMsg = Shadow.extract(msg);
+        shadowMsg.recycleUnchecked();
       }
       runLatch.countDown();
     }

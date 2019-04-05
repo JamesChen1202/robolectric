@@ -16,38 +16,37 @@ import android.os.Message;
 import android.os.MessageQueue;
 import android.os.MessageQueue.IdleHandler;
 import android.os.SystemClock;
-import androidx.test.annotation.Beta;
 import java.time.Duration;
 import java.util.ArrayList;
 import org.robolectric.RuntimeEnvironment;
 import org.robolectric.annotation.Implementation;
 import org.robolectric.annotation.Implements;
+import org.robolectric.annotation.LooperMode;
 import org.robolectric.annotation.RealObject;
 import org.robolectric.res.android.NativeObjRegistry;
 import org.robolectric.shadow.api.Shadow;
+import org.robolectric.util.Scheduler;
 import org.robolectric.util.reflector.Accessor;
 import org.robolectric.util.reflector.ForType;
 
 /**
- *  * A new variant of a MessageQueue shadow that is active when {@link
- *  * ShadowBaseLooper#useRealisticLooper()} is enabled.
+ * The shadow {@link} MessageQueue} for {@link LooperMode.Mode.PAUSED}
  *
- * This is beta API, and will very likely be renamed in a future Robolectric release.
+ * <p>This class should not be referenced directly. Use {@link ShadowMessageQueue} instead.
  */
 @Implements(
     value = MessageQueue.class,
-    shadowPicker = ShadowBaseMessageQueue.Picker.class,
+    shadowPicker = ShadowMessageQueue.Picker.class,
     // TODO: turn off shadowOf generation. Figure out why this is needed
     isInAndroidSdk = false,
     looseSignatures = true)
-@Beta
-public class ShadowRealisticMessageQueue extends ShadowBaseMessageQueue {
+public class ShadowPausedMessageQueue extends ShadowMessageQueue {
 
   @RealObject private MessageQueue realQueue;
 
   // just use this class as the native object
-  private static NativeObjRegistry<ShadowRealisticMessageQueue> nativeQueueRegistry =
-      new NativeObjRegistry<ShadowRealisticMessageQueue>(ShadowRealisticMessageQueue.class);
+  private static NativeObjRegistry<ShadowPausedMessageQueue> nativeQueueRegistry =
+      new NativeObjRegistry<ShadowPausedMessageQueue>(ShadowPausedMessageQueue.class);
   private boolean isPolling = false;
   private ShadowPausedSystemClock.Listener clockListener;
 
@@ -75,7 +74,7 @@ public class ShadowRealisticMessageQueue extends ShadowBaseMessageQueue {
 
   @Implementation(minSdk = KITKAT_WATCH)
   protected static void nativeDestroy(long ptr) {
-    ShadowRealisticMessageQueue q = nativeQueueRegistry.unregister(ptr);
+    ShadowPausedMessageQueue q = nativeQueueRegistry.unregister(ptr);
     ShadowPausedSystemClock.removeListener(q.clockListener);
   }
 
@@ -160,13 +159,6 @@ public class ShadowRealisticMessageQueue extends ShadowBaseMessageQueue {
     return reflector(ReflectorMessageQueue.class, realQueue).next();
   }
 
-  void reset() {
-    ReflectorMessageQueue msgQueue = reflector(ReflectorMessageQueue.class, realQueue);
-    msgQueue.setMessages(null);
-    msgQueue.setIdleHandlers(new ArrayList<>());
-    msgQueue.setNextBarrierToken(0);
-  }
-
   boolean isQuitAllowed() {
     return reflector(ReflectorMessageQueue.class, realQueue).getQuitAllowed();
   }
@@ -233,14 +225,46 @@ public class ShadowRealisticMessageQueue extends ShadowBaseMessageQueue {
       Message next = getMessages();
       while (next != null) {
         when = shadowOfMsg(next).getWhen();
-        next = shadowOfMsg(next).getNext();
+        next = shadowOfMsg(next).internalGetNext();
       }
     }
     return Duration.ofMillis(when);
   }
 
-  private static ShadowRealisticMessage shadowOfMsg(Message head) {
+  // TODO: reconsider exposing this as a public API. Only ShadowPausedLooper needs to access this,
+  // so it should be package private
+  @Override
+  public void reset() {
+    ReflectorMessageQueue msgQueue = reflector(ReflectorMessageQueue.class, realQueue);
+    msgQueue.setMessages(null);
+    msgQueue.setIdleHandlers(new ArrayList<>());
+    msgQueue.setNextBarrierToken(0);
+  }
+
+  private static ShadowPausedMessage shadowOfMsg(Message head) {
     return Shadow.extract(head);
+  }
+
+  @Override
+  public Scheduler getScheduler() {
+    throw new UnsupportedOperationException("Not supported in PAUSED LooperMode.");
+  }
+
+  @Override
+  public void setScheduler(Scheduler scheduler) {
+    throw new UnsupportedOperationException("Not supported in PAUSED LooperMode.");
+  }
+
+  // intentionally do not support direct access to MessageQueue internals
+
+  @Override
+  public Message getHead() {
+    throw new UnsupportedOperationException("Not supported in PAUSED LooperMode.");
+  }
+
+  @Override
+  public void setHead(Message msg) {
+    throw new UnsupportedOperationException("Not supported in PAUSED LooperMode.");
   }
 
   /** Accessor interface for {@link MessageQueue}'s internals. */
